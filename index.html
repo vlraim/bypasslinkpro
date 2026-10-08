@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BypassLink Pro</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#07050b;color:#fff;font-family:Arial,sans-serif;display:flex;justify-content:center;padding:28px 16px}
+.wrap{width:100%;max-width:900px;text-align:center}.logo{width:70px;height:70px;margin:auto;border-radius:20px;display:grid;place-items:center;font-size:32px;font-weight:900;background:linear-gradient(135deg,#b45cff,#6d28d9);box-shadow:0 0 35px #8b35dd88}
+h1{font-size:clamp(40px,8vw,68px);margin:16px 0 8px}.purple{color:#b45cff;text-shadow:0 0 25px #a855f799}.sub{color:#aaa;line-height:1.5;margin:0 auto 28px}
+.card{background:#120c1a;border:1px solid #8b3dcc55;border-radius:24px;padding:24px;box-shadow:0 0 55px #7c2de51c}
+.row{display:flex;gap:10px}input{flex:1;min-width:0;height:54px;border-radius:14px;border:1px solid #422254;background:#09070d;color:#fff;padding:0 16px;font-size:15px;outline:0}input:focus{border-color:#a855f7;box-shadow:0 0 18px #a855f733}
+button,.discord{border:0;border-radius:14px;background:linear-gradient(135deg,#b45cff,#7026d9);color:#fff;font-weight:800;padding:0 22px;height:54px;cursor:pointer;box-shadow:0 0 22px #a855f744}
+button:disabled{opacity:.65;cursor:wait}.result{display:none;text-align:left;margin-top:18px;padding:18px;border-radius:15px;background:#09070d;border:1px solid #432352}
+.result b{color:#c176ff}.url{margin-top:8px;word-break:break-all;color:#ddd}.actions{display:flex;gap:9px;margin-top:14px}.actions button{height:42px;font-size:13px}.open{display:inline-flex;align-items:center;text-decoration:none}
+.discord{display:inline-flex;align-items:center;text-decoration:none;margin-top:22px;background:#5865f2;height:48px}
+.note{font-size:12px;color:#777;margin-top:14px}.error{color:#ff8eaa!important}
+@media(max-width:600px){.row{flex-direction:column}button{width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="logo">B</div>
+<h1>BypassLink <span class="purple">Pro</span></h1>
+<p class="sub">A simple URL redirect checker and cleaner for ordinary links.</p>
+
+<div class="card">
+<div class="row">
+<input id="url" placeholder="https://example.com/..." autocomplete="url">
+<button id="go" onclick="processURL()">⚡ Process Link</button>
+</div>
+
+<div id="result" class="result"></div>
+
+<a class="discord" href="https://discord.gg/CFY6bT8Bwq" target="_blank" rel="noopener">💬 Join our Discord</a>
+<p class="note">This tool checks ordinary HTTP/HTTPS links. It does not defeat protected access controls or key systems.</p>
+</div>
+</div>
+
+<script>
+const input=document.getElementById('url'), result=document.getElementById('result'), go=document.getElementById('go');
+
+input.addEventListener('keydown',e=>{if(e.key==='Enter')processURL()});
+
+function escapeHTML(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+async function processURL(){
+  let value=input.value.trim();
+  if(!/^https?:\/\//i.test(value)) value='https://'+value;
+
+  let u;
+  try{u=new URL(value)}catch{
+    show('<b class="error">Invalid URL</b><div class="url">Please enter a valid http:// or https:// link.</div>');
+    return;
+  }
+
+  go.disabled=true; go.textContent='Checking...';
+  show('<b>Checking link…</b><div class="url">Validating '+escapeHTML(u.href)+'</div>');
+
+  try{
+    // A normal browser page cannot reliably follow arbitrary cross-origin
+    // redirects because of CORS. Try a HEAD request when permitted.
+    const r=await fetch(u.href,{method:'HEAD',redirect:'follow',mode:'cors'});
+    const finalURL=r.url || u.href;
+    showResult(finalURL,'Redirect resolved');
+  }catch{
+    // Still give a useful result instead of silently doing nothing.
+    showResult(u.href,'URL accepted');
+  }finally{
+    go.disabled=false; go.textContent='⚡ Process Link';
+  }
+}
+
+function showResult(url,status){
+  window.lastURL=url;
+  show('<b>✓ '+escapeHTML(status)+'</b>'+
+    '<div class="url">'+escapeHTML(url)+'</div>'+
+    '<div class="actions">'+
+    '<button onclick="copyURL()">📋 Copy</button>'+
+    '<a class="open" href="'+escapeHTML(url)+'" target="_blank" rel="noopener"><button type="button">↗ Open</button></a>'+
+    '</div>');
+}
+function show(content){result.style.display='block';result.innerHTML=content}
+async function copyURL(){
+  try{await navigator.clipboard.writeText(window.lastURL);alert('Copied!')}
+  catch{alert('Copy failed — press and hold the URL to copy it.')}
+}
+</script>
+</body>
+</html>
