@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#09070f">
+  <title>VlrscriptZ | Verification</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      padding: 20px; color: #f5f3ff; font-family: Arial, sans-serif;
+      background: radial-gradient(ellipse at top, #281044, #09070f 65%);
+    }
+    .card {
+      width: 100%; max-width: 410px; padding: 34px 24px; text-align: center;
+      background: #100d19; border: 1px solid #572c83; border-radius: 20px;
+      box-shadow: 0 0 45px #7c3aed20;
+    }
+    .logo {
+      width: 65px; height: 65px; margin: 0 auto 20px; display: grid;
+      place-items: center; border-radius: 18px; background: #7c3aed;
+      font-size: 27px; font-weight: bold;
+    }
+    h1 { margin: 0 0 12px; font-size: 27px; }
+    h1 span { color: #b78aff; }
+    p { color: #aaa2ba; line-height: 1.6; font-size: 14px; }
+    .captcha { display: flex; justify-content: center; margin: 26px 0 20px; }
+    button {
+      width: 100%; padding: 15px; border: 0; border-radius: 10px;
+      background: #7c3aed; color: white; font-size: 15px; font-weight: bold;
+      cursor: pointer;
+    }
+    button:disabled { opacity: .5; cursor: wait; }
+    #status { min-height: 24px; margin-top: 17px; }
+    footer { margin-top: 25px; color: #716982; font-size: 11px; }
+    .note { font-size: 12px; color: #8d849e; }
+  </style>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</head>
+<body>
+  <main class="card">
+    <div class="logo">V</div>
+    <h1>Vlrscript<span>Z</span></h1>
+    <p>One quick step before entering the server.<br>Please verify that you're human.</p>
+
+    <form id="verify-form">
+      <div class="captcha">
+        <!-- Replace YOUR_TURNSTILE_SITE_KEY after creating a widget at Cloudflare Turnstile. -->
+        <div class="cf-turnstile" data-sitekey="YOUR_TURNSTILE_SITE_KEY" data-theme="dark"></div>
+      </div>
+      <button id="verify-btn" type="submit">Verify Now →</button>
+      <p id="status" role="status" aria-live="polite"></p>
+      <p class="note">Verification needs a configured CAPTCHA key and server endpoint.</p>
+    </form>
+    <footer>VlrscriptZ • Secure Verification</footer>
+  </main>
+
+  <script>
+    const form = document.getElementById("verify-form");
+    const button = document.getElementById("verify-btn");
+    const status = document.getElementById("status");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const token = document.querySelector('[name="cf-turnstile-response"]')?.value;
+
+      if (!token) {
+        status.textContent = "Please complete the CAPTCHA first.";
+        return;
+      }
+
+      // Replace this placeholder with your deployed Cloudflare Worker URL.
+      const workerUrl = "YOUR_WORKER_URL";
+      if (workerUrl === "YOUR_WORKER_URL") {
+        status.textContent = "The CAPTCHA server hasn't been configured yet.";
+        return;
+      }
+
+      button.disabled = true;
+      status.textContent = "Checking your verification...";
+      try {
+        const response = await fetch(workerUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token })
+        });
+        const result = await response.json();
+        status.textContent = response.ok && result.success
+          ? "✓ Verification successful! You may return to Discord."
+          : "Verification failed. Please try again.";
+        if (response.ok && result.success) button.textContent = "Verified ✓";
+      } catch {
+        status.textContent = "Could not verify. Please try again later.";
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
